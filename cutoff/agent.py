@@ -35,6 +35,19 @@ these libraries may be out of date, so do not patch from memory. Work like this:
 5. Call finish with a short summary. If you cannot get the tests passing, call finish anyway and say exactly what
    is still broken and why; never claim success the tests do not show.
 
+Passing tests do not prove an upgrade is safe. Releases also change behaviour silently: a default flips, a return
+type changes, a parser becomes stricter or looser, output formats shift. Nothing fails until production. So ALWAYS
+audit, whether or not the tests fail:
+
+A. List the library APIs this repository actually uses (read the code, grep the imports).
+B. Read the changelog or release notes for every version between the old and new pin, passing those API names as
+   keywords. Look specifically for behaviour and default changes, not only removals.
+C. For each rule that touches an API used here, read the call site and its docstring or comments to learn what the
+   code is meant to do, and decide whether the change alters that. If it does, edit the code so the documented intent
+   holds on the new version, citing the rule, and add a regression test with add_regression_test that would fail if
+   the behaviour drifted again.
+D. In finish, list each behaviour change you checked: affected and fixed, or checked and not affected.
+
 Constraints enforced by the tools: you cannot edit tests or requirements files, and you cannot downgrade
 dependencies. If a rule says functionality moved into a separate package, use add_dependency. Fix the application code so it works with the new versions. Make the smallest change that each rule
 requires; also fix other usages of the same removed or renamed API that the tests may not cover."""
@@ -55,6 +68,8 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"path": {"type": "string"}, "old_string": {"type": "string"}, "new_string": {"type": "string"}, "rule_id": {"type": "string"}}, "required": ["path", "old_string", "new_string", "rule_id"]}},
     {"name": "add_dependency", "description": "Add a new package to requirements.txt and install it, when a migration rule says functionality moved to a separate package. rule_id must justify it. Cannot change or downgrade existing pins.",
      "input_schema": {"type": "object", "properties": {"package": {"type": "string"}, "rule_id": {"type": "string"}}, "required": ["package", "rule_id"]}},
+    {"name": "add_regression_test", "description": "Create a NEW test file under tests/ that pins down behaviour affected by the upgrade, so the change cannot regress silently. The filename must start with test_upgrade_. Existing tests cannot be changed.",
+     "input_schema": {"type": "object", "properties": {"filename": {"type": "string"}, "content": {"type": "string"}, "rule_id": {"type": "string"}}, "required": ["filename", "content", "rule_id"]}},
     {"name": "run_tests", "description": "Run the test suite in the sandbox and return the tail of its output.", "input_schema": {"type": "object", "properties": {}}},
     {"name": "finish", "description": "End the run with an honest report.",
      "input_schema": {"type": "object", "properties": {"summary": {"type": "string"}, "unresolved": {"type": "array", "items": {"type": "string"}}}, "required": ["summary", "unresolved"]}},
@@ -66,14 +81,19 @@ NO_RESEARCH = os.getenv("CUTOFF_NO_RESEARCH") == "1"
 if NO_RESEARCH:
     TOOLS = [t for t in TOOLS if t["name"] not in ("lookup_known_rules", "search_web", "read_changelog", "add_dependency")]
     for t in TOOLS:
+        if t["name"] == "add_regression_test":
+            t["input_schema"] = {"type": "object", "properties": {"filename": {"type": "string"}, "content": {"type": "string"}}, "required": ["filename", "content"]}
         if t["name"] == "edit_file":
             t["description"] = "Replace one exact occurrence of old_string with new_string in a file."
             t["input_schema"] = {"type": "object", "properties": {"path": {"type": "string"}, "old_string": {"type": "string"}, "new_string": {"type": "string"}}, "required": ["path", "old_string", "new_string"]}
     SYSTEM = """You migrate a Python repository after its dependencies were upgraded. The dependencies have already been
 bumped to their latest versions and the test suite now fails. You have no web access: use your own knowledge of the
 libraries, the error messages and the code. Edit the application code with edit_file, run the tests, and repeat until
-they pass. You cannot edit tests or requirements files or downgrade dependencies. Call finish with an honest summary;
-if you cannot get the tests passing, say exactly what is still broken."""
+they pass. Passing tests do not prove an upgrade is safe: releases also change behaviour silently (defaults, return
+types, stricter or looser parsing, output formats). So always audit as well: review how the code uses the upgraded
+libraries, and where you know the new versions behave differently from what the code and its docstrings intend, fix
+the code and add a regression test with add_regression_test. You cannot edit existing tests or requirements files or
+downgrade dependencies. Call finish with an honest summary of what you fixed, what you checked, and what is still broken."""
 
 
 def latest_version(package: str) -> str:
@@ -103,6 +123,7 @@ class Run:
         self.client = anthropic.Anthropic()
         self.rules: dict[str, dict] = {}
         self.edits: list[dict] = []
+        self.new_tests: list[dict] = []
         self.events: list[dict] = []
         self.cost = 0.0
         self.steps = 0
@@ -124,6 +145,19 @@ class Run:
     def git(self, *args) -> str:
         return subprocess.run(["git", "-C", str(self.repo), "-c", "user.name=cutoff", "-c", "user.email=cutoff@localhost",
                                *args], capture_output=True, text=True).stdout
+
+    def run_hidden(self) -> str | None:
+        """Run the held-out intent tests (never shown to the agent). Returns a summary line, or None if there are none."""
+        hidden = self.src / "hidden_tests"
+        if not hidden.is_dir():
+            return None
+        dest = self.repo / "_cutoff_hidden"
+        shutil.copytree(hidden, dest, dirs_exist_ok=True)
+        try:
+            code, out = self.sandbox.run("python -m pytest -q --no-header -p no:cacheprovider _cutoff_hidden 2>&1 | tail -c 3000")
+        finally:
+            shutil.rmtree(dest, ignore_errors=True)
+        return ("PASS: " if tests_passed(code, out) else "FAIL: ") + summary_line(out)
 
     # ---------- tools
     def t_lookup_known_rules(self, package, keywords=()):
@@ -210,6 +244,20 @@ class Run:
                    old="", new=f"{package}=={version}", rule_id=rule_id)
         return f"added {package}=={version}" + (f"\n{out}" if code else "")
 
+    def t_add_regression_test(self, filename, content, rule_id=None):
+        if not re.fullmatch(r"test_upgrade_[a-z0-9_]+\.py", filename):
+            raise ValueError("filename must look like test_upgrade_<name>.py")
+        if not NO_RESEARCH and rule_id not in self.rules:
+            raise ValueError(f"unknown rule_id {rule_id}")
+        p = self.repo / "tests" / filename
+        if p.exists():
+            raise ValueError("that file already exists; choose a new name")
+        p.parent.mkdir(exist_ok=True)
+        p.write_text(content)
+        self.new_tests.append({"path": f"tests/{filename}", "rule_id": rule_id, "content": content})
+        self.event("newtest", f"tests/{filename}" + (f" ({rule_id})" if rule_id else ""), path=f"tests/{filename}", rule_id=rule_id)
+        return "created"
+
     def t_run_tests(self):
         code, out = self.sandbox.run(self.test_cmd)
         ok = tests_passed(code, out)
@@ -233,7 +281,7 @@ class Run:
 
     # ---------- phases
     def prepare(self):
-        shutil.copytree(self.src, self.repo, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", "__pycache__", ".venv", "*.pyc"))
+        shutil.copytree(self.src, self.repo, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", "__pycache__", ".venv", "*.pyc", "hidden_tests"))
         self.git("init", "-q")
         self.git("add", "-A")
         self.git("commit", "-qm", "baseline")
@@ -243,6 +291,7 @@ class Run:
         code, out = self.sandbox.run("pip install -q --root-user-action=ignore -r requirements.txt 2>&1 | tail -5", timeout=600)
         code, out = self.sandbox.run(self.test_cmd)
         self.tests_original = summary_line(out)
+        self.hidden_original = self.run_hidden()
         self.event("scan", f"tests on pinned versions: {self.tests_original}", passed=tests_passed(code, out))
         for i, line in enumerate(lines):
             m = re.match(r"^([A-Za-z0-9_.\-]+)==([^\s;#]+)", line)
@@ -261,6 +310,7 @@ class Run:
             self.event("error", "dependency install failed", output=out)
         code, out = self.sandbox.run(self.test_cmd)
         self.tests_before = summary_line(out)
+        self.hidden_before = self.run_hidden()
         self.baseline_ok = tests_passed(code, out)
         self.event("test", ("PASS: " if self.baseline_ok else "FAIL: ") + self.tests_before + " (after the bump)",
                    passed=self.baseline_ok, output=out[-3000:])
@@ -270,7 +320,9 @@ class Run:
         ups = "\n".join(f"- {u['package']}: {u['from']} -> {u['to']}" for u in self.upgrades)
         messages = [{"role": "user", "content":
                      f"Dependencies upgraded in requirements.txt:\n{ups}\n\nFiles:\n{self.git('ls-files')}\n"
-                     f"Test output after the upgrade:\n```\n{failing_output}\n```\nMigrate the code."}]
+                     f"Test output after the upgrade:\n```\n{failing_output}\n```\n"
+                     + ("The tests still pass. Audit the upgrade for silent behaviour changes." if self.baseline_ok
+                        else "Migrate the code, then audit for silent behaviour changes.")}]
         while self.steps < config.MAX_STEPS and not self.finish:
             self.steps += 1
             resp = self.client.messages.create(
@@ -317,11 +369,12 @@ class Run:
         with Sandbox(self.dir / "repo") as sb:
             self.sandbox = sb
             failing = self.prepare()
-            if self.baseline_ok:
-                self.finish = {"summary": "Tests pass on the upgraded dependencies; nothing to migrate.", "unresolved": []}
+            if not self.upgrades:
+                self.finish = {"summary": "Every pinned dependency is already at its latest version.", "unresolved": []}
             else:
                 self.loop(failing)
             code, out = sb.run(self.test_cmd)
+            self.hidden_after = self.run_hidden()
             success = tests_passed(code, out)
             self.tests_after = summary_line(out)
             self.event("verdict", ("PASS: " if success else "FAIL: ") + self.tests_after, passed=success, output=out[-3000:])
@@ -332,7 +385,8 @@ class Run:
             "duration_s": round(time.time() - self.t0), "steps": self.steps, "model": config.ORCHESTRATOR_MODEL,
             "extractor": self.extractor.name, "store": self.store.name, "cost_usd": round(self.cost, 3),
             "upgrades": self.upgrades, "tests_original": self.tests_original, "tests_before": self.tests_before,
-            "tests_after": self.tests_after, "summary": self.finish["summary"], "unresolved": self.finish["unresolved"],
+            "tests_after": self.tests_after, "hidden_original": self.hidden_original, "hidden_before": self.hidden_before,
+            "hidden_after": self.hidden_after, "new_tests": self.new_tests, "summary": self.finish["summary"], "unresolved": self.finish["unresolved"],
             "edits": [{**e, "rule": self.rules[e["rule_id"]]} for e in self.edits],
             "rules_found": len(self.rules), "rules_used": [self.rules[r] for r in sorted(used)],
             "diff": self.git("diff", "HEAD"), "events": self.events,

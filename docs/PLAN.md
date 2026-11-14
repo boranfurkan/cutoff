@@ -90,3 +90,12 @@ One run per dataset is allowed at a time, so each run uses its own upload of the
   research, which used the documented `parse_hf_uri`); on pydantic-models it wrote a try/except fallback settings class
   (45 vs 21 lines) where research added `pydantic-settings`. The other 9 diffs are near-identical.
 - Honest pitch: same green tests, but the documented replacement instead of a workaround, and a checkable source for every change.
+
+## Silent-change ablation (22:14 Sat, `CUTOFF_NO_RESEARCH=1 scripts/eval.py --dir seeds_silent`, `runs/eval-1114-221410.json`)
+- 8 repos in `seeds_silent/` (verified by `scripts/check_silent.py`): visible tests pass before and after the bump, hidden
+  intent tests pass before and fail after.
+- Prediction was that memory-only Claude would stop at green tests and score near zero. Wrong: with the audit prompt it
+  passed the hidden tests on 8/8, at $0.06–0.13 per repo. It writes tests from the docstrings, runs them on the new
+  version, sees the drift and fixes it. Experiment in a sandbox substitutes for reading the changelog.
+- So research is not needed for capability on either seed set. Its value is provenance (citations) and choosing the
+  documented replacement over a workaround.
