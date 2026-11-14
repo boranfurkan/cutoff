@@ -27,7 +27,7 @@ def one(seed):
         return Run(seed, None, log=lambda m: print(f"{seed.name:18}{m}", flush=True)).execute()
     except Exception as e:  # noqa: BLE001
         return {"repo": seed.name, "success": False, "summary": f"crashed: {e}", "cost_usd": 0, "steps": 0,
-                "edits": [], "rules_used": [], "duration_s": 0, "tests_before": "", "tests_after": "", "upgrades": [],
+                "edits": [], "rules_used": [], "cited": 0, "fix_seconds": 0, "duration_s": 0, "tests_before": "", "tests_after": "", "upgrades": [],
                 "hidden_after": None, "new_tests": []}
 
 
@@ -37,7 +37,7 @@ with ThreadPoolExecutor(a.workers) as pool:
 rows = [{"repo": r["repo"], "success": r["success"],
          "upgrade": ", ".join(f"{u['package']} {u['from']}→{u['to']}" for u in r["upgrades"]),
          "tests_before": r["tests_before"], "tests_after": r["tests_after"], "edits": len(r["edits"]),
-         "rules_cited": len(r["rules_used"]), "steps": r["steps"], "seconds": r["duration_s"],
+         "cited": r.get("cited", 0), "fix_seconds": r.get("fix_seconds", 0), "steps": r["steps"], "seconds": r["duration_s"],
          "cost_usd": r["cost_usd"], "run_id": r.get("run_id"), "hidden_after": r.get("hidden_after"),
          "hidden_pass": (r.get("hidden_after") or "").startswith("PASS"), "new_tests": len(r.get("new_tests", []))} for r in reports]
 passed = sum(r["success"] for r in rows)
@@ -51,8 +51,8 @@ out = ROOT / "runs" / f"eval-{time.strftime('%m%d-%H%M%S')}.json"
 out.write_text(json.dumps(summary, indent=1))
 print()
 for r in rows:
-    print(f"{'PASS' if r['success'] else 'FAIL'} {r['repo']:18} {r['upgrade'][:44]:44} edits {r['edits']:2} "
-          f"steps {r['steps']:2} {r['seconds']:4}s ${r['cost_usd']}" + (f"  hidden {r['hidden_after'][:28]}" if r["hidden_after"] else ""))
+    print(f"{'PASS' if r['success'] else 'FAIL'} {r['repo']:18} {r['upgrade'][:44]:44} edits {r['edits']:2} cited {r['cited']:2} "
+          f"steps {r['steps']:2} fix {r['fix_seconds']:3}s total {r['seconds']:4}s ${r['cost_usd']}" + (f"  hidden {r['hidden_after'][:28]}" if r["hidden_after"] else ""))
 if hidden:
     print(f"hidden intent tests: {summary['hidden_passed']}/{len(hidden)} repos")
 print(f"\n{passed}/{len(rows)} fixed, ${summary['cost_usd']}, {summary['wall_seconds']}s -> {out}")

@@ -99,3 +99,15 @@ One run per dataset is allowed at a time, so each run uses its own upload of the
   version, sees the drift and fixes it. Experiment in a sandbox substitutes for reading the changelog.
 - So research is not needed for capability on either seed set. Its value is provenance (citations) and choosing the
   documented replacement over a workaround.
+
+## Redesign: fix first, verify second (22:30 Sat)
+Driven by the two ablations. FIX phase (Opus 5.5, sandbox only): migrate, audit for silent changes, write regression tests.
+VERIFY phase (Sonnet 5.5 + Linkup + extractor + Databricks KB): cite each change, replace workarounds with documented
+APIs, flag what no source supports; reverted automatically if it breaks passing tests.
+
+Clean sweep of all 19 repos with the new design (`runs/eval-1114-222547.json`, `runs/eval-1114-222843.json`):
+- Loud breakage (`seeds/`, 11 repos): 11/11 tests pass, 42 of 45 changes cited (scorer mean 0.97), $4.33, 33–109s to fix.
+- Silent changes (`seeds_silent/`, 8 repos): 8/8 visible, 8/8 held-out intent tests, 15 of 16 changes cited, $1.30.
+- Previous research-first design on the 11: 11/11, about $7, 49–216s.
+Headline numbers to quote: 19/19 upgraded with tests passing, 8/8 silent changes caught, 57 of 61 changes source-backed.
+Uncited changes are flagged in the PR, not hidden.

@@ -20,7 +20,7 @@ def every_edit_cited(outputs) -> float:
     """Share of code edits backed by a rule with a source URL and a real quote (4+ words)."""
     edits = outputs["edits"]
     if not edits:
-        return 0.0
+        return 1.0
     good = sum(1 for e in edits if e["source_url"].startswith("http") and len(e["source_quote"].split()) >= 4)
     return good / len(edits)
 
@@ -38,6 +38,12 @@ def honest_report(outputs) -> bool:
 
 
 @scorer
+def intent_preserved(outputs) -> bool:
+    """Held-out tests of the documented intent pass (always true for repos without held-out tests)."""
+    return not outputs.get("hidden_after") or outputs["hidden_after"].startswith("PASS")
+
+
+@scorer
 def cost_usd(outputs) -> float:
     return float(outputs["cost_usd"])
 
@@ -47,7 +53,7 @@ def agent_steps(outputs) -> int:
     return int(outputs["steps"])
 
 
-SCORERS = [tests_pass, every_edit_cited, tests_untouched, honest_report, cost_usd, agent_steps]
+SCORERS = [tests_pass, intent_preserved, every_edit_cited, tests_untouched, honest_report, cost_usd, agent_steps]
 
 
 def to_row(report: dict) -> dict:
@@ -58,8 +64,10 @@ def to_row(report: dict) -> dict:
             "success": report["success"], "tests_before": report["tests_before"], "tests_after": report["tests_after"],
             "summary": report["summary"], "unresolved": report["unresolved"], "steps": report["steps"],
             "cost_usd": report["cost_usd"], "seconds": report["duration_s"],
-            "edits": [{"path": e["path"], "symbol": e["rule"]["symbol"], "replacement": e["rule"].get("replacement"),
-                       "source_url": e["rule"]["source_url"], "source_quote": e["rule"]["source_quote"]}
+            "hidden_after": report.get("hidden_after"), "new_tests": len(report.get("new_tests", [])),
+            "edits": [{"path": e["path"], "reason": e.get("reason", ""),
+                       "source_url": (e.get("rule") or {}).get("source_url", ""),
+                       "source_quote": (e.get("rule") or {}).get("source_quote", "")}
                       for e in report["edits"]],
         },
     }

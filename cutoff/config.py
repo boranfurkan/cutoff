@@ -11,6 +11,9 @@ ORCHESTRATOR_MODEL = os.getenv("CUTOFF_MODEL", "claude-opus-5-5")
 EXTRACTOR_MODEL = os.getenv("CUTOFF_EXTRACTOR_MODEL", "claude-sonnet-5-5")
 EFFORT = os.getenv("CUTOFF_EFFORT", "high")
 MAX_STEPS = int(os.getenv("CUTOFF_MAX_STEPS", "40"))
+# Verification is lookup-and-match work, so it runs on a cheaper model by default.
+VERIFY_MODEL = os.getenv("CUTOFF_VERIFY_MODEL", "claude-sonnet-5-5")
+MAX_VERIFY_STEPS = int(os.getenv("CUTOFF_MAX_VERIFY_STEPS", "16"))
 SANDBOX_IMAGE = os.getenv("CUTOFF_SANDBOX_IMAGE", "python:3.12-slim")
 RUNS_DIR = ROOT / "runs"
 

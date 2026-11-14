@@ -26,8 +26,8 @@ def main():
         rep["pr_url"] = deliver.open_pr(rep, run.repo, src, slug)
         print("pull request:", rep["pr_url"])
     print(f"\n{'SUCCESS' if rep['success'] else 'FAILED'}: {rep['tests_before']}  →  {rep['tests_after']}")
-    print(f"{len(rep['edits'])} edits citing {len(rep['rules_used'])} rules, {rep['steps']} steps, "
-          f"{rep['duration_s']}s, ${rep['cost_usd']}")
+    print(f"{len(rep['edits'])} changes, {rep['cited']} backed by a source, {len(rep['new_tests'])} regression tests, "
+          f"fix {rep['fix_seconds']}s, total {rep['duration_s']}s, ${rep['cost_usd']} {rep['cost_by_phase']}")
     print(rep["summary"])
     path = config.RUNS_DIR / rep["run_id"] / "report.json"
     path.write_text(__import__("json").dumps(rep, indent=1))

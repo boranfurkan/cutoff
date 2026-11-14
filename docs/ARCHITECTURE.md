@@ -1,6 +1,6 @@
 # Architecture
 
-Status: design, written Sat 14 Nov 2026 before any agent code exists. Update this file when the design changes.
+Status: SUPERSEDED IN PART. The agent was redesigned at 22:30 Sat 14 Nov as fix-then-verify (see the docstring of `cutoff/agent.py` and "Redesign" in PLAN.md). The components, rule shape, storage and sandbox sections below still hold; the six-step flow and the tool table describe the first, research-first design.
 
 ## One run, end to end
 
