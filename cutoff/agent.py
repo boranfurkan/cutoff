@@ -40,7 +40,7 @@ requires; also fix other usages of the same removed or renamed API that the test
 
 TOOLS = [
     {"name": "lookup_known_rules", "description": "Look up migration rules for a package that earlier runs already found and stored in the knowledge base. Cheap; call before searching the web.",
-     "input_schema": {"type": "object", "properties": {"package": {"type": "string"}}, "required": ["package"]}},
+     "input_schema": {"type": "object", "properties": {"package": {"type": "string"}, "keywords": {"type": "array", "items": {"type": "string"}, "description": "Symbols from the errors, e.g. applymap, fillna; only matching rules are returned."}}, "required": ["package", "keywords"]}},
     {"name": "search_web", "description": "Live web search (Linkup). Use it to find the changelog, release notes or migration guide for a package version, or what replaced a specific removed symbol. Returns titles, URLs and snippets.",
      "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
     {"name": "read_changelog", "description": "Fetch a page (changelog, release notes, migration guide) and extract structured migration rules from it. Returns rules with rule_id, kind, symbol, replacement, example and the supporting quote. Give keywords (symbols from the errors) so the relevant sections are prioritised.",
@@ -109,12 +109,17 @@ class Run:
                                *args], capture_output=True, text=True).stdout
 
     # ---------- tools
-    def t_lookup_known_rules(self, package):
-        found = self.store.lookup_rules(package)
+    def t_lookup_known_rules(self, package, keywords=()):
+        found = list({r["rule_id"]: r for r in self.store.lookup_rules(package)}.values())
+        found = [r for r in found if len((r.get("source_quote") or "").split()) >= 4]
+        kws = [k.lower().split(".")[-1] for k in keywords if k]
+        if kws:  # most relevant first: rules whose symbol or text mentions a keyword
+            score = lambda r: sum(k in f"{r['symbol']} {r.get('before')} {r['note']}".lower() for k in kws)
+            found = sorted((r for r in found if score(r)), key=score, reverse=True)
         for r in found:
             self.rules[r["rule_id"]] = r
         self.event("memory", f"knowledge base: {len(found)} stored rules for {package}", package=package, count=len(found))
-        return self._brief(found) if found else "No stored rules for this package yet."
+        return self._brief(found) if found else "No stored rules match. Search the web."
 
     def t_search_web(self, query):
         results = research.search(query)

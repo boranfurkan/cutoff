@@ -74,3 +74,11 @@ Cut order if time runs short: UI polish → Databricks evaluation UI → number 
 
 ## Spend log
 - Anthropic: about $13.5 of $50 used by 21:15 Sat (labeling ~$5, agent runs ~$8.5). A full 11-repo sweep costs about $7.
+- Adaption: balance still showed 1,250 credits at 21:20 Sat with one run in progress (billing may land at the end).
+
+## Adaption runs (see `scripts/adaption_status.py`, state in `data/work/adaption_runs.json`)
+One run per dataset is allowed at a time, so each run uses its own upload of the same file.
+- 13d1399f: Qwen3.5-9B, dataset v1 (1,500 rows, 34% empty), platform defaults. 0.4966 after iteration 1.
+- Launched 21:22 Sat on dataset v2 (1,138 rows, 10% empty), 3 epochs, lr 2e-4 (9B: 1e-4), LoRA r32, up to 5 iterations, target 0.95:
+  Qwen3.5-2B, Qwen3.5-4B, Qwen3.5-9B, and Qwen3.5-4B with augmentation (+3,000 domain, +1,500 general rows).
+- Reasoning: v1's empty-answer rows probably produce ties; smaller bases leave more room to beat the base model.

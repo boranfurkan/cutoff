@@ -46,6 +46,12 @@ Only use information in the excerpt. Do not invent symbols or versions. If nothi
 callers, return {"rules": []}.
 Answer with JSON only: {"rules": [...]}"""
 
+# Extra guidance for the Claude backend only; the fine-tuned model was trained on TASK alone.
+QUOTE_HINT = """
+
+Make each source_quote the whole sentence or bullet that states the change (usually 8 to 40 words), so that a
+reviewer reading only the quote can see what changed. Never quote a bare symbol name."""
+
 BREAKING = re.compile(r"breaking|deprecat|removed|remove |renamed|rename |no longer|replaced|expired|"
                       r"migration|incompatible|api change|instead", re.I)
 CHUNK = 3500
@@ -90,7 +96,7 @@ class Extractor:
 
     def _one(self, package: str, upgrade: str, excerpt: str) -> list[dict]:
         msg = self.client.messages.create(
-            model=config.EXTRACTOR_MODEL, max_tokens=6000, system=TASK,
+            model=config.EXTRACTOR_MODEL, max_tokens=6000, system=TASK + QUOTE_HINT,
             output_config={"effort": "low", "format": {"type": "json_schema", "schema": RULE_SCHEMA}},
             messages=[{"role": "user", "content":
                        f"Package: {package}\nUpgrade: {upgrade}\n\nChangelog excerpt:\n{excerpt}"}],
@@ -103,7 +109,7 @@ class Extractor:
         except (StopIteration, json.JSONDecodeError, KeyError):
             return []
         ex = norm(excerpt)
-        return [r for r in rules if norm(r["source_quote"]) and norm(r["source_quote"]) in ex]
+        return [r for r in rules if len(norm(r["source_quote"]).split()) >= 4 and norm(r["source_quote"]) in ex]
 
     def extract(self, text: str, package: str, upgrade: str, source_url: str, keywords: list[str]) -> list[dict]:
         chunks = pick_chunks(text, keywords)
