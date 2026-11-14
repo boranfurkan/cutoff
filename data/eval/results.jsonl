@@ -1,0 +1,1 @@
+{"base": "Qwen/Qwen3.5-2B", "adapter": null, "rows": 12, "valid_json": 0.9166666666666666, "verbatim_quote_rate": 0.75, "symbol_precision": 0.625, "symbol_recall": 0.238, "symbol_f1": 0.345, "correctly_empty": "3/3", "seconds_per_row": 20.4}
