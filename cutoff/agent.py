@@ -77,7 +77,7 @@ def summary_line(out: str) -> str:
 class Run:
     def __init__(self, repo: Path, packages: list[str] | None, store_kind: str | None = None, log=print):
         self.id = datetime.now().strftime("%m%d-%H%M%S-") + uuid.uuid4().hex[:4]
-        self.src = repo.resolve()
+        self.src = Path(repo).resolve()
         self.dir = config.RUNS_DIR / self.id
         self.repo = self.dir / "repo"
         self.packages = packages
