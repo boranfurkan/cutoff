@@ -2,7 +2,7 @@
 import argparse
 from pathlib import Path
 
-from . import config, deliver
+from . import config, deliver, report_html
 from .agent import Run
 
 
@@ -28,7 +28,9 @@ def main():
     print(f"{len(rep['edits'])} edits citing {len(rep['rules_used'])} rules, {rep['steps']} steps, "
           f"{rep['duration_s']}s, ${rep['cost_usd']}")
     print(rep["summary"])
-    print(f"report: runs/{rep['run_id']}/report.json")
+    path = config.RUNS_DIR / rep["run_id"] / "report.json"
+    path.write_text(__import__("json").dumps(rep, indent=1))
+    print("report:", report_html.write(path))
 
 
 if __name__ == "__main__":
