@@ -55,4 +55,8 @@ if ml:
         ml.log_metrics({"pass_rate": summary["pass_rate"], "passed": passed, "cost_usd": summary["cost_usd"],
                         "avg_steps": sum(r["steps"] for r in rows) / len(rows)})
         ml.log_table({k: [r[k] for r in rows] for k in rows[0]}, "eval_results.json")
+    from cutoff import scoring
+    full = [r for r in reports if "events" in r]
+    if full:
+        print(json.dumps(scoring.evaluate(full).metrics, indent=1))
     print("logged to Databricks experiment")
