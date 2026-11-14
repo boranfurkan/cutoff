@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+best-checkpoint*/
+*.tgz
+runs/
+docs/vendor/
+data/raw/
+data/work/

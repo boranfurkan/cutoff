@@ -1,0 +1,75 @@
+# Plan
+
+Solo build. Full hackathon notes are in `~/Desktop/imperial-ai-hack/`.
+
+## Hard deadlines (London time)
+
+| When | What |
+|---|---|
+| **Sun 15 Nov 12:00** | Devpost submission closes. Last commit and the video must be before this. Nothing can change after. |
+| Sun 13:00–16:30 | Judging: 10-minute slot (2-minute video, 6 minutes of questions). Slot announced after submissions close. |
+| Sun ~15:50 | Live finals for top Autonomous Agents teams (run the product live). |
+| Sun 17:00 / 17:30 | Main-stage finals / prizes. |
+
+Work must have started after Sat 12:10, and all code must be new.
+
+## Prize targets (one submission)
+
+| Prize | What decides it | What we need |
+|---|---|---|
+| Autonomous Agents track (£500 / £200) | does it work 30, technical depth 25, usefulness 20, video and answers 15, originality 10 | A real end-to-end run and a measured pass rate |
+| Linkup bounty (£560 + credits) | How central Linkup is; agent "researches, verifies or acts on fresh information, citing its sources" | Every fix grounded in a Linkup result and cited |
+| Databricks bounty (£960 + swag) | Creativity, technical depth, real-world impact on the Databricks platform | Knowledge base in Delta tables, traces and evaluation in MLflow |
+| Best Use of Adaption ($1,000 credits each) | Adaption's leaderboard: win rate against the base model | A fine-tuned model ID on the leaderboard |
+| Figma Best-Designed (£960 + merch) | Design quality, evidence of Figma use | A Figma file for the run-report UI |
+
+Rule: at most 2 bounties from the track (Linkup and Databricks). Figma and Adaption don't count toward the 2.
+
+## Order of work
+
+1. **Fine-tune first, because it runs for hours unattended.** Generate the dataset, upload, launch AutoScientist tonight.
+2. **Core agent loop** on one seeded repo: scan → research → extract → patch → verify.
+3. **Seeded repos and the pass-rate harness** (about 10 repos).
+4. **Databricks**: store and traces, then evaluation.
+5. **Pull request delivery and run report.**
+6. **UI** from a Figma design.
+7. **Sunday morning**: record the 2-minute video, write the Devpost entry, final commit by 11:30 to leave margin.
+
+Cut order if time runs short: UI polish → Databricks evaluation UI → number of seeded repos (keep at least 5). Never cut: the working end-to-end run, the video, the public repo.
+
+## Status
+
+- [x] Hackathon rules and logistics captured
+- [x] Vendor docs downloaded and read (`docs/vendor/`, `docs/reference/`)
+- [x] Architecture written
+- [x] API keys in `.env`: Anthropic, Linkup, Adaption, Databricks host + token + warehouse path (Databricks SQL and MLflow access tested)
+- [x] Python 3.14 virtualenv and dependencies (`.venv`: anthropic 2.8.0, mlflow 3.18.0, adaption 0.19.0, linkup-sdk, databricks-sql-connector)
+- [x] Docker Desktop running
+- [ ] Public GitHub repo created
+- [x] Raw changelogs collected: 6,868 excerpts from 66 libraries' GitHub releases (`scripts/collect_changelogs.py`)
+- [x] Balanced sample selected: 1,500 train + 100 held out, 65 packages, 80% mention breaking changes
+- [x] Sample labeled by Sonnet 5.5 via Batch API (~$5): 1,092 rows with rules, 508 correctly empty, 2,925 rules, all quotes verbatim
+- [x] Fine-tuning dataset exported: 1,500 train (`data/train/`), 100 held out (`data/eval/`)
+- [x] Adaption run launched 20:41 Sat: run `13d1399f-2a8e-442f-b035-51946ef526af`, Qwen/Qwen3.5-9B, SFT, up to 3 iterations, target win rate 0.7. Check with `scripts/adaption_run.py status`
+- [x] Agent loop working (`python -m cutoff.cli run seeds/<name>`)
+- [x] 11 seeded repos in `seeds/` (verified with `scripts/check_seeds.py`). Sweep at 21:12 Sat: 10/11 fixed first time, $7.09; pydantic failed until `add_dependency` tool was added, then passed. So 11/11 with one fix-and-rerun. Rerun the full sweep once before quoting a number
+- [x] Databricks: rules and runs in `workspace.default.cutoff_rules` / `cutoff_runs`, traces and eval runs in experiment `/Shared/cutoff` (`CUTOFF_TRACE=1 CUTOFF_STORE=databricks scripts/eval.py`). `mlflow.genai.evaluate` not used yet
+- [ ] Pull request delivery
+- [ ] Figma design + UI
+- [ ] Video (max 2:00)
+- [ ] Devpost: track, 2 bounties, team member details, Adaption model ID, Figma link
+
+## Open questions
+
+| Question | Why it matters | How to resolve |
+|---|---|---|
+| Where is the Adaption leaderboard, and how does a run get on it? | The prize is decided there | Others asked in Discord `#questions` at 16:56 with no public answer; open a ticket or ask Adaption |
+| How many credits and hours does an AutoScientist run take? | Must finish before Sunday 12:00 | The app shows the cost before confirming; the docs only say "runtime is hours" |
+| Can a trained checkpoint be served from Adaption, or only downloaded? | Decides whether the extractor runs hosted or locally | Check Inference Stacks in the app once a run finishes; download works either way |
+| Which base model? | Win rate vs local runnability | Docs say "use at least a 7–8B model" for flat win rates; an M3 Pro with 18 GB runs a 7B model quantised. See reference/adaption.md |
+| Is a demo video required? | The guide says no, Devpost says yes | Treat as required |
+| Which ecosystem and libraries for the seeded repos? | Demo credibility: changes should be recent enough that models get them wrong from memory | Pick Python libraries with major releases in 2026, found via Linkup during the build |
+| Databricks Free Edition daily quota | Exceeding it shuts compute for the day | Keep `LocalStore` as fallback; don't run heavy jobs tonight |
+
+## Spend log
+- Anthropic: about $13.5 of $50 used by 21:15 Sat (labeling ~$5, agent runs ~$8.5). A full 11-repo sweep costs about $7.
