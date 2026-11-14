@@ -16,7 +16,7 @@ from .extractor import Extractor
 from .sandbox import Sandbox
 from .store import get_store
 
-TEST_CMD = "python -m pytest -q --no-header -p no:cacheprovider 2>&1 | tail -c 6000"
+TEST_CMD = "python -m pytest -q --no-header -p no:cacheprovider"
 PROTECTED = re.compile(r"(^|/)(tests?/|test_[^/]*\.py$|[^/]*_test\.py$|conftest\.py$|requirements[^/]*\.txt$)")
 
 SYSTEM = """You are Cutoff, an agent that migrates a Python repository after its dependencies were upgraded.
@@ -75,7 +75,8 @@ def summary_line(out: str) -> str:
 
 
 class Run:
-    def __init__(self, repo: Path, packages: list[str] | None, store_kind: str | None = None, log=print):
+    def __init__(self, repo: Path, packages: list[str] | None, store_kind: str | None = None, log=print, test_cmd: str | None = None):
+        self.test_cmd = f"{test_cmd or TEST_CMD} 2>&1 | tail -c 6000"
         self.id = datetime.now().strftime("%m%d-%H%M%S-") + uuid.uuid4().hex[:4]
         self.src = Path(repo).resolve()
         self.dir = config.RUNS_DIR / self.id
@@ -190,7 +191,7 @@ class Run:
         return f"added {package}=={version}" + (f"\n{out}" if code else "")
 
     def t_run_tests(self):
-        code, out = self.sandbox.run(TEST_CMD)
+        code, out = self.sandbox.run(self.test_cmd)
         ok = tests_passed(code, out)
         self.event("test", ("PASS: " if ok else "FAIL: ") + summary_line(out), passed=ok, output=out[-3000:])
         return out
@@ -220,7 +221,7 @@ class Run:
         lines = req.read_text().splitlines()
         self.upgrades = []
         code, out = self.sandbox.run("pip install -q --root-user-action=ignore -r requirements.txt 2>&1 | tail -5", timeout=600)
-        code, out = self.sandbox.run(TEST_CMD)
+        code, out = self.sandbox.run(self.test_cmd)
         self.tests_original = summary_line(out)
         self.event("scan", f"tests on pinned versions: {self.tests_original}", passed=tests_passed(code, out))
         for i, line in enumerate(lines):
@@ -238,7 +239,7 @@ class Run:
         code, out = self.sandbox.run("pip install -q --root-user-action=ignore -r requirements.txt 2>&1 | tail -15", timeout=600)
         if code != 0 or "ERROR" in out:
             self.event("error", "dependency install failed", output=out)
-        code, out = self.sandbox.run(TEST_CMD)
+        code, out = self.sandbox.run(self.test_cmd)
         self.tests_before = summary_line(out)
         self.baseline_ok = tests_passed(code, out)
         self.event("test", ("PASS: " if self.baseline_ok else "FAIL: ") + self.tests_before + " (after the bump)",
@@ -300,7 +301,7 @@ class Run:
                 self.finish = {"summary": "Tests pass on the upgraded dependencies; nothing to migrate.", "unresolved": []}
             else:
                 self.loop(failing)
-            code, out = sb.run(TEST_CMD)
+            code, out = sb.run(self.test_cmd)
             success = tests_passed(code, out)
             self.tests_after = summary_line(out)
             self.event("verdict", ("PASS: " if success else "FAIL: ") + self.tests_after, passed=success, output=out[-3000:])

@@ -13,13 +13,14 @@ def main():
     r.add_argument("repo", type=str, help="local path, GitHub URL or owner/name")
     r.add_argument("--package", action="append", help="only upgrade this package (repeatable)")
     r.add_argument("--store", choices=["local", "databricks"])
+    r.add_argument("--test-cmd", help="test command to run in the sandbox (default: python -m pytest -q)")
     r.add_argument("--pr", action="store_true", help="open a pull request (repo must be a GitHub URL or owner/name)")
     a = ap.parse_args()
     slug = deliver.parse_github(str(a.repo))
     src = a.repo
     if slug:
         src = deliver.clone(slug, config.RUNS_DIR / "clones" / f"{slug.replace('/', '__')}-{__import__('uuid').uuid4().hex[:6]}" / slug.split("/")[1])
-    run = Run(src, [p.lower() for p in a.package] if a.package else None, a.store)
+    run = Run(src, [p.lower() for p in a.package] if a.package else None, a.store, test_cmd=a.test_cmd)
     rep = run.execute()
     if a.pr and slug and rep["edits"]:
         rep["pr_url"] = deliver.open_pr(rep, run.repo, src, slug)
