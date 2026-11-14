@@ -82,3 +82,11 @@ One run per dataset is allowed at a time, so each run uses its own upload of the
 - Launched 21:22 Sat on dataset v2 (1,138 rows, 10% empty), 3 epochs, lr 2e-4 (9B: 1e-4), LoRA r32, up to 5 iterations, target 0.95:
   Qwen3.5-2B, Qwen3.5-4B, Qwen3.5-9B, and Qwen3.5-4B with augmentation (+3,000 domain, +1,500 general rows).
 - Reasoning: v1's empty-answer rows probably produce ties; smaller bases leave more room to beat the base model.
+
+## Ablation: research tools off (21:59 Sat, `CUTOFF_NO_RESEARCH=1 scripts/eval.py`, results in `runs/eval-1114-215917.json`)
+- Memory-only Claude Opus 5.5 fixed 11/11, in 17–50s and $0.04–0.15 per repo ($0.75 total). With research: 11/11, 49–216s, $0.24–1.06.
+- So pass rate does NOT separate the two on these seeds. Do not pitch "fixes what the model cannot".
+- Where they differ: on hfhub-uris the memory-only run vendored a 60-line copy of the removed function (65 added lines vs 8 with
+  research, which used the documented `parse_hf_uri`); on pydantic-models it wrote a try/except fallback settings class
+  (45 vs 21 lines) where research added `pydantic-settings`. The other 9 diffs are near-identical.
+- Honest pitch: same green tests, but the documented replacement instead of a workaround, and a checkable source for every change.

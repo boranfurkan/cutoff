@@ -1,5 +1,6 @@
 """The Cutoff agent: bump dependencies, research what changed, patch the code, prove it with tests."""
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -58,6 +59,21 @@ TOOLS = [
     {"name": "finish", "description": "End the run with an honest report.",
      "input_schema": {"type": "object", "properties": {"summary": {"type": "string"}, "unresolved": {"type": "array", "items": {"type": "string"}}}, "required": ["summary", "unresolved"]}},
 ]
+
+
+# Ablation: the same agent with no research tools, patching from the model's built-in knowledge only.
+NO_RESEARCH = os.getenv("CUTOFF_NO_RESEARCH") == "1"
+if NO_RESEARCH:
+    TOOLS = [t for t in TOOLS if t["name"] not in ("lookup_known_rules", "search_web", "read_changelog", "add_dependency")]
+    for t in TOOLS:
+        if t["name"] == "edit_file":
+            t["description"] = "Replace one exact occurrence of old_string with new_string in a file."
+            t["input_schema"] = {"type": "object", "properties": {"path": {"type": "string"}, "old_string": {"type": "string"}, "new_string": {"type": "string"}}, "required": ["path", "old_string", "new_string"]}
+    SYSTEM = """You migrate a Python repository after its dependencies were upgraded. The dependencies have already been
+bumped to their latest versions and the test suite now fails. You have no web access: use your own knowledge of the
+libraries, the error messages and the code. Edit the application code with edit_file, run the tests, and repeat until
+they pass. You cannot edit tests or requirements files or downgrade dependencies. Call finish with an honest summary;
+if you cannot get the tests passing, say exactly what is still broken."""
 
 
 def latest_version(package: str) -> str:
@@ -155,9 +171,13 @@ class Run:
         out = self.git("grep", "-nE", pattern)
         return out[:8000] or "no matches"
 
-    def t_edit_file(self, path, old_string, new_string, rule_id):
+    def t_edit_file(self, path, old_string, new_string, rule_id=None):
         if PROTECTED.search(path):
             raise ValueError("tests and requirements files are read-only: fix the application code instead")
+        if NO_RESEARCH:
+            rule_id = "NONE"
+            self.rules.setdefault("NONE", {"rule_id": "NONE", "symbol": "(no source)", "kind": "uncited", "replacement": None,
+                                           "note": "edited from model memory", "source_url": "", "source_quote": ""})
         if rule_id not in self.rules:
             raise ValueError(f"unknown rule_id {rule_id}: every edit must cite a rule from read_changelog or lookup_known_rules")
         p = self.path(path)
