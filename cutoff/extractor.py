@@ -56,6 +56,7 @@ BREAKING = re.compile(r"breaking|deprecat|removed|remove |renamed|rename |no lon
                       r"migration|incompatible|api change|instead", re.I)
 CHUNK = 3500
 MAX_CHUNKS = 12
+KEYWORD_CHUNKS = 10
 
 
 def norm(s: str) -> str:
@@ -85,6 +86,9 @@ def pick_chunks(text: str, keywords: list[str]) -> list[str]:
         if score:
             scored.append((score, i, c))
     scored.sort(key=lambda t: (-t[0], t[1]))
+    named = [t for t in scored if t[0] >= 10]  # chunks that mention a keyword
+    if named:  # verification asks about specific symbols: read only the sections that name them
+        return [c for _, _, c in named[:KEYWORD_CHUNKS]]
     return [c for _, _, c in scored[:MAX_CHUNKS]]
 
 
