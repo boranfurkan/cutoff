@@ -127,3 +127,13 @@ Still to do, in order:
 4. Video script and Devpost text.
 5. Morning: final sweep with Databricks on (~$5; ~$20 Anthropic credit left), update README numbers, commit by 11:30.
 6. User records the 2-minute video and submits on Devpost before 12:00.
+
+## Local extractor wiring (00:40 Sun)
+- `CUTOFF_LOCAL_BASE=<hf model> [CUTOFF_LOCAL_ADAPTER=<dir>]` switches the verify phase's extractor to a local model
+  (`cutoff/extractor.py::_local`). Tested with untuned Qwen3.5-2B on fastapi-orders: path works end to end, but it found
+  the wrong rules (0 of 1 cited, 166s total vs 46s with Sonnet). That is the untuned baseline to beat.
+- Finished 9B checkpoint downloaded to `models/qwen9b-v1/` (standard PEFT LoRA, base `togethercomputer/Qwen3.5-9B`,
+  241 MB). Not run locally: 9B in fp16 needs ~18 GB, the whole machine's memory.
+- Only finished runs are downloadable (`download_available` is false while running).
+- Morning: download the 2B run when it finishes, run `scripts/eval_extractor.py --base Qwen/Qwen3.5-2B --adapter models/<dir>`
+  against the untuned baseline (recall 0.24 on 12 rows), then one seed with CUTOFF_LOCAL_ADAPTER set.

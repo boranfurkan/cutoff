@@ -5,7 +5,10 @@ Every rule must carry a quote that appears verbatim in the source text, or it is
 """
 import hashlib
 import json
+import os
 import re
+import threading
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 import anthropic
@@ -57,6 +60,7 @@ BREAKING = re.compile(r"breaking|deprecat|removed|remove |renamed|rename |no lon
 CHUNK = 3500
 MAX_CHUNKS = 12
 KEYWORD_CHUNKS = 10
+LOCAL_CHUNKS = 4
 
 
 def norm(s: str) -> str:
@@ -97,8 +101,27 @@ class Extractor:
         self.client = anthropic.Anthropic()
         self.cost = 0.0
         self.name = f"claude:{config.EXTRACTOR_MODEL}"
+        # CUTOFF_LOCAL_BASE (+ optional CUTOFF_LOCAL_ADAPTER) switches extraction to the fine-tuned local model.
+        self.local_base = os.getenv("CUTOFF_LOCAL_BASE")
+        self.local_adapter = os.getenv("CUTOFF_LOCAL_ADAPTER")
+        self._lock = threading.Lock()
+        if self.local_base:
+            self.name = f"local:{self.local_base}" + (f"+{Path(self.local_adapter).name}" if self.local_adapter else "")
+
+    def _local(self, package: str, upgrade: str, excerpt: str) -> list[dict]:
+        """Fine-tuned open-weight model on this machine. Same prompt format it was trained on."""
+        from . import local_model
+        prompt = f"{TASK}\n\nPackage: {package}\nUpgrade: {upgrade}\n\nChangelog excerpt:\n{excerpt}"
+        with self._lock:  # one generation at a time on the GPU
+            rules = local_model.parse_rules(local_model.generate(prompt, self.local_base, self.local_adapter))
+        ex = norm(excerpt)
+        keep = {"kind", "symbol", "replacement", "before", "after", "note", "source_quote"}
+        return [{k: r.get(k) for k in keep} for r in rules or []
+                if len(norm(r["source_quote"]).split()) >= 4 and norm(r["source_quote"]) in ex]
 
     def _one(self, package: str, upgrade: str, excerpt: str) -> list[dict]:
+        if self.local_base:
+            return self._local(package, upgrade, excerpt)
         msg = self.client.messages.create(
             model=config.EXTRACTOR_MODEL, max_tokens=6000, system=TASK + QUOTE_HINT,
             output_config={"effort": "low", "format": {"type": "json_schema", "schema": RULE_SCHEMA}},
@@ -117,6 +140,8 @@ class Extractor:
 
     def extract(self, text: str, package: str, upgrade: str, source_url: str, keywords: list[str]) -> list[dict]:
         chunks = pick_chunks(text, keywords)
+        if self.local_base:
+            chunks = chunks[:LOCAL_CHUNKS]  # local generation is slow; read the best few sections
         with ThreadPoolExecutor(8) as pool:
             results = list(pool.map(lambda c: self._one(package, upgrade, c), chunks))
         out, seen = [], set()
