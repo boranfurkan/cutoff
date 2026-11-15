@@ -1,7 +1,6 @@
 # Submission pack
 
-Numbers below come from the sweep at 22:30 on Sat 14 Nov (`runs/eval-1114-222547.json`, `runs/eval-1114-222843.json`).
-Update them if the final sweep differs.
+Numbers below come from the final sweep at 03:10 on Sun 15 Nov (`runs/eval-1115-030749.json`, `runs/eval-1115-031027.json`).
 
 ## Devpost fields
 
@@ -34,8 +33,8 @@ Update them if the final sweep differs.
 **How well it works.** We built 19 small repositories around real library releases, each checked to pass on the old version and break on the new one.
 - Loud breakage (11 repos): 11 of 11 pass their tests after Cutoff.
 - Silent behaviour changes (8 repos): tests pass before and after the bump, but held-out tests of the intended behaviour fail. Cutoff restores the intended behaviour in 8 of 8. The agent never sees those held-out tests.
-- 57 of 61 code changes are backed by a cited source. The other 4 are flagged in the pull request.
-- A typical run takes about a minute and costs under $0.20.
+- 53 of 58 code changes are backed by a cited source. The other 5 are flagged in the pull request.
+- A typical run takes about 70 seconds and costs about $0.24.
 
 **What we learned by testing our own idea.** Our first design had the agent research the web before every fix. We then switched research off and reran everything: the agent still fixed all 19. The sandbox loop, not the research, is what makes the fix possible. So we redesigned: fix first from experiment, then use research to verify and cite. The result is cheaper and faster, and the citations stayed. Both experiments are in the repository.
 
@@ -94,5 +93,5 @@ Cut to the report page for the same run.
 
 - **"Isn't this just Claude?"** The model does the reasoning. What we built is what makes it trustworthy: the sandbox, guardrails in code, the audit step, held-out tests to measure it, and citations checked word for word. We also measured what research adds and designed around the answer.
 - **"How do you know the silent-change result is real?"** The held-out tests are never copied into the agent's workspace. They pass on the old version, fail after the bump, and pass again after Cutoff.
-- **"What doesn't work?"** Real repositories with complex setup (databases, extra requirement files). Four of 61 changes had no source. Large changelogs like pandas make verification slower and dearer.
+- **"What doesn't work?"** Real repositories with complex setup (databases, extra requirement files). Five of 58 changes had no source. Large changelogs like pandas make verification slower and dearer.
 - **"Why two models?"** Fixing needs the strongest model. Verifying is lookup and matching, so a cheaper one does it.

@@ -21,8 +21,24 @@ Measured on 19 small repositories we built around real library releases (`seeds/
 |---|---|
 | Loud breakage (11 repos): tests pass after Cutoff | 11 / 11 |
 | Silent behaviour changes (8 repos): held-out intent tests pass after Cutoff | 8 / 8 |
-| Changes backed by a cited source | 57 of 61 (the other 4 are flagged in the PR) |
-| Median cost per repo | about $0.19 |
+| Changes backed by a cited source | 53 of 58 (the other 5 are flagged in the PR) |
+| Median cost per repo | about $0.24 |
+| Median time per repo, including verification | about 70 seconds |
+
+### The fine-tuned extractor
+
+The verify phase turns changelog text into structured rules. By default Claude Sonnet does that. We also fine-tuned Qwen 3.5 2B for the job with Adaption AutoScientist, on 1,138 changelog excerpts we collected and labelled during the hackathon.
+
+| | Untuned Qwen 2B | Fine-tuned |
+|---|---|---|
+| Adaption win rate against the base model | n/a | 0.84 |
+| Breaking changes found on 30 held-out excerpts | 28% | 47% |
+| Valid output format | 93% | 100% |
+| Quotes copied word for word | 90% | 100% |
+
+Used as the extractor on the 8 silent-change repos (`CUTOFF_LOCAL_BASE=Qwen/Qwen3.5-2B CUTOFF_LOCAL_ADAPTER=models/qwen2b-v2`), it runs on a laptop and the agent still restores intent in 8 of 8, with a citation attached to all 13 changes. Reading those citations by hand, about 10 are clearly on point and 3 are loosely related, so Sonnet stays the default.
+
+### What research adds
 
 We also ran the agent with web research switched off. It still fixes all 19: the sandbox loop, not the research, is what makes the fix possible. That result is why research is a verification step here and not the driver. See `docs/PLAN.md` for both ablations.
 

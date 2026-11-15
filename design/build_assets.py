@@ -26,7 +26,7 @@ THUMB = f"""<div style="width:1500px;height:1000px;padding:84px 96px;position:re
 <div style="margin-top:56px;font-size:22px;display:flex;gap:26px">
 <span class=pill style="background:{LIME};transform:rotate(-1.5deg)">19 / 19 REPOS UPGRADED</span>
 <span class=pill style="background:{BUTTER};transform:rotate(1deg)">8 / 8 SILENT CHANGES CAUGHT</span>
-<span class=pill style="background:{SKY};transform:rotate(-1deg)">57 / 61 CHANGES CITED</span></div>
+<span class=pill style="background:{SKY};transform:rotate(-1deg)">53 / 58 CHANGES CITED</span></div>
 <div class=mono style="position:absolute;left:96px;bottom:84px;font-size:18px;color:{MIST};letter-spacing:.08em;line-height:1.7">CLAUDE · LINKUP · DATABRICKS · ADAPTION</div></div>"""
 
 

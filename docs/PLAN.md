@@ -179,3 +179,12 @@ to "anyone with the link can view", paste the link into Devpost's Figma field.
   Never run the local model with eval.py --workers > 1, and close other heavy apps first.
 - Figma agent: job 1 done (Cutoff variables, 6 text styles, 7 named components bound to variables). Job 2 (instances,
   auto layout, text styles applied, prototype link) made no changes: daily AI credits ran out.
+
+## Final sweep (03:10 Sun, `runs/eval-1115-030749.json`, `runs/eval-1115-031027.json`), default extractor, Databricks on
+- Loud: 11/11, 37 of 41 changes cited, $3.56. Silent: 8/8 visible and 8/8 hidden, 16 of 17 cited, $1.26.
+- Totals to quote: 19/19, 8/8 silent, 53 of 58 cited, median $0.24 and about 70s per repo.
+- With the fine-tuned 2B extractor on the 8 silent repos (`runs/eval-1115-030158.json`): 8/8, 13/13 cited, $0.79, but
+  roughly 3 of the 13 citations are only loosely related (attrs, pillow, typer).
+- Round-2 Adaption runs launched 02:46: 2B on v3 (rules-only, 1,028 rows), 2B on v2 with 6 epochs, Qwen3-4B-Base on v3,
+  gemma-3-4b-pt on v3; all up to 5 iterations, target 0.99.
+- Anthropic spend estimate: about $38 of $50.

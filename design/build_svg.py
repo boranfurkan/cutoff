@@ -261,7 +261,7 @@ def cover(x0, y0, W=1440, H=900):
                             "and backs every change with a source a reviewer can check."]):
         text(x0 + 96, y0 + 590 + i * 40, ln, 28, MIST, SANS, 400)
     px = x0 + 96
-    for label, fill, rot in [("19 / 19 REPOS UPGRADED", LIME, -1.5), ("8 / 8 SILENT CHANGES CAUGHT", BUTTER, 1), ("57 / 61 CHANGES CITED", SKY, -1)]:
+    for label, fill, rot in [("19 / 19 REPOS UPGRADED", LIME, -1.5), ("8 / 8 SILENT CHANGES CAUGHT", BUTTER, 1), ("53 / 58 CHANGES CITED", SKY, -1)]:
         px += sticker(px, y0 + 720, label, fill, 17, 20, rot) + 26
     text(x0 + W - 96, y0 + H - 60, "IMPERIAL AI HACK · 15 NOV 2026 · FURKAN BORAN", 15, MIST, MONO, 500, "end", ls=2)
     end()
