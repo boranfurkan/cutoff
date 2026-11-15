@@ -150,3 +150,10 @@ No leaderboard in the app, on adaptionlabs.ai, or on the hackathon site. Each ru
 "View") shows "Training model name", e.g. `adaption_qwen3_5_9b_adaption_train_13d1399f` for the finished 9B run: pattern
 `adaption_<base>_<dataset>_<first 8 of run id>`. Use the winning run's name as the Devpost "Adaption model ID".
 That page also shows "Code Win Rates, across all tasks processed in the Code category": base 40, adapted 70.
+
+## Figma (01:55 Sun)
+Run-report screen designed in the user's portfolio design language (night hero, Instrument Serif headline, sticker pills,
+hard-shadow cards; tokens from ~/Desktop/personal-portfolio/src/styles/globals.css). Source: `design/build_svg.py` →
+`design/run-report.svg`, pasted into Figma as editable layers: https://www.figma.com/design/HhX3S7DN8VA3ge4kfzuIy3/Untitled
+The product's report page (`cutoff/report_html.py`) was restyled to match. Still for the user: rename the file, set sharing
+to "anyone with the link can view", paste the link into Devpost's Figma field.
