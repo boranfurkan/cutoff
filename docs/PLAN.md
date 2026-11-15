@@ -111,3 +111,19 @@ Clean sweep of all 19 repos with the new design (`runs/eval-1114-222547.json`, `
 - Previous research-first design on the 11: 11/11, about $7, 49–216s.
 Headline numbers to quote: 19/19 upgraded with tests passing, 8/8 silent changes caught, 57 of 61 changes source-backed.
 Uncited changes are flagged in the PR, not hidden.
+
+## Handoff, 00:25 Sun 15 Nov (session hit its usage limit)
+Done since the redesign: demo PRs (orders-api #1 silent change, sales-report #2; old #1 closed), report page reviewed
+via headless Chrome and fixed, extractor reads only keyword sections (KEYWORD_CHUNKS=10, untested at that value).
+Adaption at 23:28: run 13d1399f finished at 0.6156; 2B run e549b6ad at 0.7519 after 1/5; others in progress.
+Leaderboard: question posted in Discord #questions 22:49 Sat, no answer by 00:15; nothing in announcements.
+The Adaption app's dashboard redirected away when opened in Chrome (not investigated).
+
+Still to do, in order:
+1. Wire fine-tuned extractor into verify phase (`cutoff/local_model.py`, `scripts/eval_extractor.py` exist; download with
+   `scripts/adaption_run.py download` for the finished run, or adapt for the 2B run id).
+2. Devpost: user is logged in; join hackathon, create draft (user asked Claude to do it in Chrome).
+3. Figma design of the report page (user has a free Figma account).
+4. Video script and Devpost text.
+5. Morning: final sweep with Databricks on (~$5; ~$20 Anthropic credit left), update README numbers, commit by 11:30.
+6. User records the 2-minute video and submits on Devpost before 12:00.
