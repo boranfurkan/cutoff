@@ -144,3 +144,9 @@ bounties Databricks + Linkup; Figma Yes; Adaption Yes; team line. Still blank: v
 Adaption model ID, Figma link. Final step has a terms checkbox and Submit: the user's to tick and press.
 Eligibility: rules require current university students; user starts an MSc at UZH in Feb 2027 and is not enrolled now.
 The team line states that openly. User should confirm with an organiser.
+
+## Adaption model ID (01:30 Sun)
+No leaderboard in the app, on adaptionlabs.ai, or on the hackathon site. Each run's results page (dashboard → AutoScientist
+"View") shows "Training model name", e.g. `adaption_qwen3_5_9b_adaption_train_13d1399f` for the finished 9B run: pattern
+`adaption_<base>_<dataset>_<first 8 of run id>`. Use the winning run's name as the Devpost "Adaption model ID".
+That page also shows "Code Win Rates, across all tasks processed in the Code category": base 40, adapted 70.
