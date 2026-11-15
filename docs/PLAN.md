@@ -157,3 +157,6 @@ hard-shadow cards; tokens from ~/Desktop/personal-portfolio/src/styles/globals.c
 `design/run-report.svg`, pasted into Figma as editable layers: https://www.figma.com/design/HhX3S7DN8VA3ge4kfzuIy3/Untitled
 The product's report page (`cutoff/report_html.py`) was restyled to match. Still for the user: rename the file, set sharing
 to "anyone with the link can view", paste the link into Devpost's Figma field.
+- 02:20: Figma file renamed "Cutoff run report" by the user; single frame replaced with a 6-frame board from
+  `design/cutoff-board.svg` (Cover, Foundations, Report / Silent change caught, Report / Change with no source,
+  Report / Mobile, Pull request comment). Layers are named groups. URL: https://www.figma.com/design/HhX3S7DN8VA3ge4kfzuIy3/Cutoff-run-report
