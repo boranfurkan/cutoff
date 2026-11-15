@@ -11,10 +11,21 @@ def load(base: str, adapter: str | None = None):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(base)
-    model = AutoModelForCausalLM.from_pretrained(base, dtype=torch.float16, device_map="mps")
     if adapter:
+        # Adaption trains Qwen 3.5 through its multimodal class, so the LoRA weights are named
+        # model.language_model.layers.*. Loading the text-only class leaves every adapter weight unmatched
+        # (PEFT only warns), which silently gives you the base model.
         from peft import PeftModel
-        model = PeftModel.from_pretrained(model, adapter)
+        from transformers import AutoModelForImageTextToText
+        model = AutoModelForImageTextToText.from_pretrained(base, dtype=torch.float16, device_map="mps")
+        import warnings
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            model = PeftModel.from_pretrained(model, adapter)
+        if any("missing adapter keys" in str(w.message) for w in caught):
+            raise RuntimeError("adapter weights did not match the base model; refusing to run as the plain base")
+    else:
+        model = AutoModelForCausalLM.from_pretrained(base, dtype=torch.float16, device_map="mps")
     model.eval()
     return tok, model
 

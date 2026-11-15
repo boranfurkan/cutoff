@@ -166,3 +166,16 @@ to "anyone with the link can view", paste the link into Devpost's Figma field.
 - Brand assets in `design/assets/` (logo.png 512, thumbnail.png 1500x1000, gallery-report.png), built by
   `design/build_assets.py`. Thumbnail and report screenshot uploaded to the Devpost image gallery and saved.
   The project thumbnail (logo) on Devpost's "Project overview" step is not set yet.
+
+## Fine-tuned extractor measured (02:35 Sun)
+- 2B run e549b6ad finished at best_win_rate 0.8372 (9B v1: 0.6156; others still running at 02:12). Adapter in `models/qwen2b-v2/`.
+- Loader bug found and fixed: Adaption trains Qwen 3.5 via the multimodal class, so LoRA keys are
+  `model.language_model.layers.*`; loading with AutoModelForCausalLM silently drops every adapter weight. `cutoff/local_model.py`
+  now loads AutoModelForImageTextToText for adapters and raises if keys are missing.
+- Held-out test, 30 excerpts, symbol match against Sonnet labels (`data/eval/results.jsonl`):
+  base 2B: recall 0.281, precision 0.41, valid JSON 93%, verbatim quotes 90%.
+  tuned 2B: recall 0.474, precision 0.443, valid JSON 100%, verbatim quotes 100%, 9s per excerpt.
+- 02:38: running two seeds in parallel with the local extractor exhausted memory (exit 137), killed Docker and other apps.
+  Never run the local model with eval.py --workers > 1, and close other heavy apps first.
+- Figma agent: job 1 done (Cutoff variables, 6 text styles, 7 named components bound to variables). Job 2 (instances,
+  auto layout, text styles applied, prototype link) made no changes: daily AI credits ran out.
