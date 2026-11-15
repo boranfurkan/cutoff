@@ -137,3 +137,10 @@ Still to do, in order:
 - Only finished runs are downloadable (`download_available` is false while running).
 - Morning: download the 2B run when it finishes, run `scripts/eval_extractor.py --base Qwen/Qwen3.5-2B --adapter models/<dir>`
   against the untuned baseline (recall 0.24 on 12 rows), then one seed with CUTOFF_LOCAL_ADAPTER set.
+
+## Devpost (01:15 Sun)
+Draft "Cutoff" (submission 1304213), 3/5 steps done. Saved: story, built-with tags, repo link; track Autonomous Agents;
+bounties Databricks + Linkup; Figma Yes; Adaption Yes; team line. Still blank: video URL (YouTube/Vimeo, required),
+Adaption model ID, Figma link. Final step has a terms checkbox and Submit: the user's to tick and press.
+Eligibility: rules require current university students; user starts an MSc at UZH in Feb 2027 and is not enrolled now.
+The team line states that openly. User should confirm with an organiser.
