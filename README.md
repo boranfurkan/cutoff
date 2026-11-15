@@ -38,6 +38,8 @@ The verify phase turns changelog text into structured rules. By default Claude S
 
 Used as the extractor on the 8 silent-change repos (`CUTOFF_LOCAL_BASE=Qwen/Qwen3.5-2B CUTOFF_LOCAL_ADAPTER=models/qwen2b-v2`), it runs on a laptop and the agent still restores intent in 8 of 8, with a citation attached to all 13 changes. Reading those citations by hand, about 10 are clearly on point and 3 are loosely related, so Sonnet stays the default.
 
+Two later runs scored higher on Adaption's own measure (Qwen 3.5 2B at 0.89, Gemma 3 4B at 1.00). The 0.89 model did worse on our held-out excerpts, reporting a breaking change in all 8 excerpts that have none, and we could not run the Gemma model locally, so the 0.84 model is the one we use.
+
 ### What research adds
 
 We also ran the agent with web research switched off. It still fixes all 19: the sandbox loop, not the research, is what makes the fix possible. That result is why research is a verification step here and not the driver. See `docs/PLAN.md` for both ablations.

@@ -188,3 +188,13 @@ to "anyone with the link can view", paste the link into Devpost's Figma field.
 - Round-2 Adaption runs launched 02:46: 2B on v3 (rules-only, 1,028 rows), 2B on v2 with 6 epochs, Qwen3-4B-Base on v3,
   gemma-3-4b-pt on v3; all up to 5 iterations, target 0.99.
 - Anthropic spend estimate: about $38 of $50.
+
+## Round-2 Adaption results (04:55 Sun)
+- 2B on v3 `d7b8ffb8`: 0.8922. 2B on v2, 6 epochs `00cad367`: 0.839. Qwen3-4B-Base on v3 `f157cbd1`: 0.776.
+  gemma-3-4b-pt on v3 `99eef0cd`: 1.0, stopped at iteration 3 of 5 (target reached).
+- 2B v3 adapter (`models/qwen2b-v3/`) on the 30 held-out excerpts: recall 0.439, precision 0.391, valid JSON 100%,
+  verbatim quotes 98%, correctly empty 0/8. Worse than 2B v2 (recall 0.474, precision 0.443, empty 7/8): v3 has no
+  empty-answer rows, so the model always reports something. 2B v2 stays the product extractor.
+- Gemma adapter downloaded (`models/gemma4b-v3/`) but not measured: the base model is gated on Hugging Face (401 without an
+  accepted licence). Its 1.0 is against an untuned non-chat base, so treat it as a leaderboard number only.
+- Which model ID goes into Devpost is left to the user: see docs/MORNING.md.
