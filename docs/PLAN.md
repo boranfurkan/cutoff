@@ -160,3 +160,9 @@ to "anyone with the link can view", paste the link into Devpost's Figma field.
 - 02:20: Figma file renamed "Cutoff run report" by the user; single frame replaced with a 6-frame board from
   `design/cutoff-board.svg` (Cover, Foundations, Report / Silent change caught, Report / Change with no source,
   Report / Mobile, Pull request comment). Layers are named groups. URL: https://www.figma.com/design/HhX3S7DN8VA3ge4kfzuIy3/Cutoff-run-report
+- 03:10: Figma: outer frame ungrouped into six top-level frames; stickers, button, stat card and citation block in
+  Foundations made into components. Not done: auto layout, prototype link, Figma Make. Opening-ceremony slides PDF could
+  not be downloaded from Discord's signed link (three attempts).
+- Brand assets in `design/assets/` (logo.png 512, thumbnail.png 1500x1000, gallery-report.png), built by
+  `design/build_assets.py`. Thumbnail and report screenshot uploaded to the Devpost image gallery and saved.
+  The project thumbnail (logo) on Devpost's "Project overview" step is not set yet.
